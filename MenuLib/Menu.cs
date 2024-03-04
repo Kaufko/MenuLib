@@ -63,13 +63,11 @@ namespace MenuLib
     public class Menu
     {
         public string Name { get; }
-        public bool WaitForKey { get; }
         public Action Action { get; }
 
-        public Menu(string name, bool waitForKey, Action action)
+        public Menu(string name, Action action)
         {
             Name = name;
-            WaitForKey = waitForKey;
             Action = action;
         }
     }
