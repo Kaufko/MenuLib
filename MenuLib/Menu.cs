@@ -4,6 +4,7 @@ namespace MenuLib
     {
         static List<Menu> activeMenu = new List<Menu>();
         static public int selectionIndex = 0;
+        static public char selectedChar = ">"
         public static void Start(List<Menu> mainMenu)
         {
             activeMenu = mainMenu;
@@ -43,7 +44,7 @@ namespace MenuLib
             {
                 if (activeMenu[selectionIndex] == menu)
                 {
-                    Console.WriteLine(">" + menu.Name);
+                    Console.WriteLine(selectedChar + menu.Name);
                 }
                 else
                 {
