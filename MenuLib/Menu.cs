@@ -2,9 +2,23 @@ namespace MenuLib
 {
     public static class MenuK
     {
-        static List<Menu> activeMenu = new List<Menu>();
+        #region 
+        static public List<Menu> activeMenu = new List<Menu>();
         static public int selectionIndex = 0;
-        static public char selectedChar = ">"
+        static public int currentHistoryIndex = 10;
+        static public List<KeyValuePair<int, Menu>> menuHistory = new List<KeyValuePair<int, Menu>>();
+        #endregion
+
+        #region Keys
+        static public ConsoleKeyInfo keyPress = ConsoleKey.Enter;
+        static public ConsoleKeyInfo keyBack = ConsoleKey.LeftArrow;
+        static public ConsoleKeyInfo keyForward = ConoleKey.RightArrow;
+        static public ConsoleKeyInfo keyQuit = ConsoleKey.Escape;
+        static public ConsoleKeyInfo keyMainMenu = ConsoleKey.Space;
+        static public ConsoleKeyInfo keyUp = ConsoleKey.UpArrow;
+        static public ConsoleKeyInfo keyDown = ConsolKey.DownArrow;
+        #endregion
+
         public static void Start(List<Menu> mainMenu)
         {
             activeMenu = mainMenu;
@@ -14,26 +28,34 @@ namespace MenuLib
                 Write(activeMenu, selectionIndex);
                 keyRead = default;
                 keyRead = Console.ReadKey();
-                if (keyRead.Key == ConsoleKey.Enter)
+                if (keyRead.Key == keyPress)
                 {
                     Console.Clear();
                     activeMenu[selectionIndex].Action.Invoke();
                 }
-                else if (keyRead.Key == ConsoleKey.UpArrow && selectionIndex - 1 >= 0)
+                else if (keyRead.Key == keyUp && selectionIndex - 1 >= 0)
                 {
                     selectionIndex--;
                 }
-                else if (keyRead.Key == ConsoleKey.DownArrow && selectionIndex + 1 < activeMenu.Count)
+                else if (keyRead.Key == keyDown && selectionIndex + 1 < activeMenu.Count)
                 {
                     selectionIndex++;
                 }
-                else if (keyRead.Key == ConsoleKey.Backspace)
+                else if (keyRead.Key == keyMainMenu)
                 {
                     selectionIndex = 0;
                     activeMenu = mainMenu;
                 }
+                else if(keyRead.Key == keyBack)
+                { 
+                    GoBack()
+                }
+                else if(keyRead.Key == keyForward)
+                {
+                    GoForwards()
+                }
             }
-            while (keyRead.Key != ConsoleKey.Escape);
+            while (keyRead.Key != keyQuit);
         }
 
         public static void Write(List<Menu> activeMenu, int selectionIndex)
@@ -44,7 +66,7 @@ namespace MenuLib
             {
                 if (activeMenu[selectionIndex] == menu)
                 {
-                    Console.WriteLine(selectedChar + menu.Name);
+                    Console.WriteLine(">" + menu.Name);
                 }
                 else
                 {
@@ -56,8 +78,31 @@ namespace MenuLib
 
         public static void SelectSubMenu(List<Menu> menu)
         {
+            menuHistory.Remove(10);
+            menuHistory.Insert(0, KeyValuePair<selectionIndex, activeMenu>);
+            currentHistoryIndex = 10;
             selectionIndex = 0;
             activeMenu = menu;
+        }
+
+        public static void GoBack()
+        {
+            if(currentHistoryIndex > 0)
+            {
+                currentHistoryIndex--;
+                selectionIndex = menuHistory[currentHistoryIndex].Key;
+                activeMenu = menuHistory[currentHistoryIndex].Value;
+            }
+        }
+
+        public static void GoForwards()
+        {
+            if(currentHistoryIndex < 10)
+            {
+                currentHistoryIndex++;
+                selectionIndex = menuHistory[currentHistoryIndex].Key;
+                activeMenu = menuHistory[currentHistoryIndex].Value;
+            }
         }
     }
 
