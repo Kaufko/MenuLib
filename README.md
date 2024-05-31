@@ -3,10 +3,10 @@ MenuLib is a dotnet library that is used to create an interactive menu in consol
 
 ---
 ## Features
-Easily configurable controls
-Basic customization
-Menu history
-Back to main menu key
+1. Easily configurable controls
+2. Basic customization
+3. Menu history
+4. Back to main menu key
 
 ## Usage
 
