@@ -55,7 +55,7 @@ namespace Main
 
 <h4>Changing menus</h4>
 
-Changing menus is very easy, when creating an option, make the function SelectSubMenu()
+Changing menus is very easy. When creating an option use the function SelectSubMenu()
 
 ```C#
 new Menu("Submenu", () => SelectSubMenu(subMenu))
