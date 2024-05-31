@@ -12,7 +12,7 @@ MenuLib is a dotnet library that is used to create an interactive menu in consol
 
 <h3>Basic usage</h3>
 
-First you need to make a mainMenu, which you will later pass as args into the Start() function.
+First you need to make a main menu, which you will later pass as args into the Start() function.
 
 ```C#
 using MenuLibrary;
