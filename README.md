@@ -1,6 +1,4 @@
 # MenuLib
-
-[**English**](./README.md)
 MenuLib is a dotnet library that is used to create an interactive menu in console.
 
 ---
