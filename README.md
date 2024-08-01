@@ -4,9 +4,9 @@ MenuLib is a dotnet library that is used to create an interactive menu in consol
 ---
 ## Features
 1. Easily configurable controls
-2. Basic customization
+2. Advanced customization
 3. Menu history
-4. Back to main menu key
+4. Multiple keybinds
 
 ## Usage
 
@@ -74,6 +74,6 @@ keyPress = ChangeKey(ConsoleKey.Enter)
 2. keyBack -> goes back in history
 3. keyForward -> goes forward in history (only usable if you went back before)
 4. keyQuit -> exits the interactive menu (not the program)
-5. keyManiMenu -> goes back to main menu
+5. keyMainMenu -> goes back to main menu
 6. keyUp -> goes up by 1
 7. keyDown -> goes down by 1
