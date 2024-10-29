@@ -1,12 +1,14 @@
+using System.Runtime.InteropServices;
+
 namespace MenuLibrary
 {
     public static class MenuLib
     {
         #region 
-        static public List<Menu> activeMenu = new List<Menu>();
+        static public List<Option> activeMenu = new List<Option>();
         static public int selectionIndex = 0;
         static public int currentHistoryIndex = 0;
-        static public List<KeyValuePair<int, List<Menu>>> menuHistory = new List<KeyValuePair<int, List<Menu>>>();
+        static public List<KeyValuePair<int, List<Option>>> menuHistory = new List<KeyValuePair<int, List<Option>>>();
         #endregion
 
         #region Keys
@@ -24,9 +26,8 @@ namespace MenuLibrary
             return new ConsoleKeyInfo('\0', key, shift, alt, ctrl);
         }
 
-        public static void Start(List<Menu> mainMenu)
+        public static void Start(List<Option> mainMenu)
         {
-            menuHistory.Insert(0, new KeyValuePair<int, List<Menu>>(selectionIndex, activeMenu));
             activeMenu = mainMenu;
             ConsoleKeyInfo keyRead;
             do
@@ -63,11 +64,11 @@ namespace MenuLibrary
             while (keyRead.Key != keyQuit.Key);
         }
 
-        public static void Write(List<Menu> activeMenu, int selectionIndex)
+        public static void Write(List<Option> activeMenu, int selectionIndex)
         {
             Console.Clear();
 
-            foreach (Menu menu in activeMenu)
+            foreach (Option menu in activeMenu)
             {
                 if (activeMenu[selectionIndex] == menu)
                 {
@@ -81,19 +82,19 @@ namespace MenuLibrary
 
         }
 
-        public static void SelectSubMenu(List<Menu> menu)
+        public static void SelectSubMenu(List<Option> menu)
         {
-            if(menuHistory.Count > 10)
+            if (menuHistory.Count > 10)
             {
                 menuHistory.RemoveAt(10);
             }
-            menuHistory.Insert(0, new KeyValuePair<int, List<Menu>>(selectionIndex, activeMenu));
-            currentHistoryIndex = menuHistory.Count;
+            menuHistory.Insert(0, new KeyValuePair<int, List<Option>>(selectionIndex, new List<Option>(activeMenu)));
+            //currentHistoryIndex = menuHistory.Count;
             selectionIndex = 0;
             activeMenu = menu;
         }
 
-        public static void GoBack()
+        public static void GoForwards()
         {
             if (currentHistoryIndex > 0)
             {
@@ -103,7 +104,7 @@ namespace MenuLibrary
             }
         }
 
-        public static void GoForwards()
+        public static void GoBack()
         {
             if (currentHistoryIndex < menuHistory.Count - 1)
             {
@@ -114,12 +115,12 @@ namespace MenuLibrary
         }
     }
 
-    public class Menu
+    public class Option
     {
         public string Name { get; }
         public Action Action { get; }
 
-        public Menu(string name, Action action)
+        public Option(string name, Action action)
         {
             Name = name;
             Action = action;
