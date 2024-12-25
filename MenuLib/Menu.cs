@@ -6,6 +6,7 @@ namespace MenuLibrary
 {
     public static class MenuLib
     {
+        //default keybinds
         static private readonly Dictionary<string, string> defaultKeyBindings = new Dictionary<string, string>
         {
             { "Press", "13|0" },        // Enter
@@ -18,6 +19,7 @@ namespace MenuLibrary
         };
 
         #region Registry
+        //default registry path
         static private string registryKeyPath = @"HKEY_CURRENT_USER\Software\Kaufko\MenuLib";
         //loads in format ascii/bool/bool/bool
         static ConsoleKeyInfo LoadKeyFromRegistry(string keyName)
@@ -45,7 +47,7 @@ namespace MenuLibrary
 
             // Split the string into parts (key and modifiers)
             int[] regVal = registryValue.Split("|").Select(int.Parse).ToArray();
-            //stores the modifiers
+            //stores the key modifiers
             bool[] modifiers = new bool[3];
             if (regVal[1] >= 4)
             {
@@ -65,8 +67,10 @@ namespace MenuLibrary
             return new ConsoleKeyInfo('\0',ConvertNumberToConsoleKey(regVal[0]), modifiers[0], modifiers[1], modifiers[2]);
         }
         #endregion
+        //saves keybind
         static void SaveKeyToRegistry(string keyName, ConsoleKeyInfo keyBind)
         {
+        //checks if OS is windows
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 Registry.SetValue(registryKeyPath, keyName, $"{(int)keyBind.Key}|{(int)keyBind.Modifiers}");
@@ -74,7 +78,7 @@ namespace MenuLibrary
             //saves value to registry
             
         }
-
+        //decodes ascii to consolekey 
         static ConsoleKey ConvertNumberToConsoleKey(int number)
         {
             if (Enum.IsDefined(typeof(ConsoleKey), number))
@@ -84,6 +88,7 @@ namespace MenuLibrary
             }
             else
             {
+                //if it's not a special key, just convert to a char
                 return (ConsoleKey)Convert.ToChar(number);
             }
         }
@@ -99,8 +104,8 @@ namespace MenuLibrary
         #endregion
 
         #region Keys
-        static public ConsoleKeyInfo keyPress;
-        static public ConsoleKeyInfo keyBack;
+        static public ConsoleKeyInfo keyPress; //Key to select option
+        static public ConsoleKeyInfo keyBack; //Key to move back to the last menu
         static public ConsoleKeyInfo keyForward; // Key to move forward to the next menu    
         static public ConsoleKeyInfo keyQuit; // Key to quit the menu
         static public ConsoleKeyInfo keyMainMenu; // Key to return to the main menu
@@ -110,15 +115,19 @@ namespace MenuLibrary
         #endregion
 
 
-
+        //changes keybind and saves to registry (Windows only)
         public static ConsoleKeyInfo KeyChange(string keyName, ConsoleKey key = ConsoleKey.None, bool shift = false, bool alt = false, bool ctrl = false)
         {
-
+            //temporary value to pass TryParse out
             char keyChar;
+            //checks if key is a valid character or not
+            //check if this is even needed, shouldn't it be inverted?
             if(char.TryParse(key.ToString(), out keyChar))
             {
+                //sets keyChar to "null"
                 keyChar = '\0';
             }
+            //builds the ConsoleKeyInfo
             ConsoleKeyInfo keyInfo = new ConsoleKeyInfo(keyChar, key, shift, alt, ctrl); // Create custom key mapping
 
             // Save the key binding to the registry after creating the key mapping
@@ -127,8 +136,10 @@ namespace MenuLibrary
             return keyInfo;
         }
 
+        //main function of the library
         public static void Start(List<Option> mainMenu)
         {
+            //loads keys from the registry
             keyBack = LoadKeyFromRegistry("Back");
             keyDown = LoadKeyFromRegistry("Down");
             keyForward = LoadKeyFromRegistry("Forward");
@@ -176,6 +187,7 @@ namespace MenuLibrary
             while (keyRead.Key != keyQuit.Key); // Exit the loop when quit key is pressed
         }
 
+        //writes out the active menu
         public static void Write()
         {
             Console.Clear();
