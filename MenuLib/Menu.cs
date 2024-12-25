@@ -1,75 +1,234 @@
-using MenuLibrary;
-using System.Runtime.ConstrainedExecution;
+using Microsoft.Win32;
+using System.Diagnostics;
 
-class Program
+namespace MenuLibrary
 {
-    // Global main menu definition
-    static List<Option> mainMenu = new List<Option>
+    public static class MenuLib
     {
-        new Option("Go to Submenu 1", () => MenuLib.SelectSubMenu(SubMenu1())),
-        new Option("Go to Submenu 2", () => MenuLib.SelectSubMenu(SubMenu2())),
-        new Option("View Controls", ViewControls),     // Option to view current key bindings
-        new Option("Quit", () => Environment.Exit(0))  // Option to quit
-    };
-
-    static void Main()
-    {
-        //MenuLib.Start(mainMenu); // Start the menu system with the global main menu
-        while (true)
+        static private readonly Dictionary<string, string> defaultKeyBindings = new Dictionary<string, string>
         {
-            MenuLib.Start(mainMenu);
+            { "Press", "13|0" },        // Enter
+            { "Back", "37|0" },         // LeftArrow
+            { "Forward", "39|0" },      // RightArrow
+            { "Quit", "27|0" },         // Escape
+            { "MainMenu", "32|0" },     // Spacebar
+            { "Up", "38|0" },           // UpArrow
+            { "Down", "40|0" }          // DownArrow
+        };
 
+        #region Registry
+        static private string registryKeyPath = @"HKEY_CURRENT_USER\Software\Kaufko\MenuLib";
+        //loads in format ascii/bool/bool/bool
+        static ConsoleKeyInfo LoadKeyFromRegistry(string keyName)
+        {
+            //retrieves value from registry
+            string registryValue = Registry.GetValue(registryKeyPath, keyName, null) as string;
+
+            // If registry value is null or empty, fall back to default
+            if (string.IsNullOrEmpty(registryValue))
+            {
+                registryValue = defaultKeyBindings[keyName]; // Default value
+            }
+
+            // Split the string into parts (key and modifiers)
+            int[] regVal = registryValue.Split("|").Select(int.Parse).ToArray();
+            //stores the modifiers
+            bool[] modifiers = new bool[3];
+            if (regVal[1] >= 4)
+            {
+                modifiers[0] = true;
+                regVal[1] -= 4;
+            }
+            if (regVal[1] >= 2)
+            {
+                modifiers[1] = true;
+                regVal[1] -= 2;
+            }
+            if (regVal[1] >= 1)
+            {
+                modifiers[2] = true;
+                regVal[1] -= 1;
+            }
+            return new ConsoleKeyInfo('\0',ConvertNumberToConsoleKey(regVal[0]), modifiers[0], modifiers[1], modifiers[2]);
+        }
+        #endregion
+        static void SaveKeyToRegistry(string keyName, ConsoleKeyInfo keyBind)
+        {
+            //saves value to registry
+            Registry.SetValue(registryKeyPath, keyName, $"{(int)keyBind.Key}|{(int)keyBind.Modifiers}");
         }
 
-    }
-
-    static List<Option> SubMenu1()
-    {
-        return new List<Option>
+        static ConsoleKey ConvertNumberToConsoleKey(int number)
         {
-            new Option("Option 1.1", () => Console.WriteLine("You selected Option 1.1!")),
-            new Option("Option 1.2", () => Console.WriteLine("You selected Option 1.2!")),
-            new Option("Back to Main Menu", () => MenuLib.SelectSubMenu(mainMenu)),
-            new Option("Go to Submenu 1.3", () => MenuLib.SelectSubMenu(SubMenu1_3())),
-            new Option("Quit", () => Environment.Exit(0))
-        };
-    }
+            if (Enum.IsDefined(typeof(ConsoleKey), number))
+            {
+                // Check if the number matches a special key (e.g., Enter, Escape)
+                return (ConsoleKey)number;
+            }
+            else
+            {
+                return (ConsoleKey)Convert.ToChar(number);
+            }
+        }
+    
+        #region  Vars
+        static public List<Option> activeMenu = new List<Option>(); // Current menu being displayed
 
-    static List<Option> SubMenu2()
-    {
-        return new List<Option>
+        static public int selectionIndex = 0; // Current selection index in the menu
+        
+
+        static private Stack<List<Option>> backHistory = new Stack<List<Option>>(); // Stack to track previous menus for back navigation
+        static private Stack<List<Option>> forwardHistory = new Stack<List<Option>>(); // Stack to track menus for forward navigation
+        #endregion
+
+        #region Keys
+        static public ConsoleKeyInfo keyPress;
+        static public ConsoleKeyInfo keyBack;
+        static public ConsoleKeyInfo keyForward; // Key to move forward to the next menu    
+        static public ConsoleKeyInfo keyQuit; // Key to quit the menu
+        static public ConsoleKeyInfo keyMainMenu; // Key to return to the main menu
+        static public ConsoleKeyInfo keyUp; // Key to move selection up
+        static public ConsoleKeyInfo keyDown; // Key to move selection down
+
+        #endregion
+
+
+
+        public static ConsoleKeyInfo KeyChange(string keyName, ConsoleKey key = ConsoleKey.None, bool shift = false, bool alt = false, bool ctrl = false)
         {
-            new Option("Option 2.1", () => Console.WriteLine("You selected Option 2.1!")),
-            new Option("Option 2.2", () => Console.WriteLine("You selected Option 2.2!")),
-            new Option("Option 2.3", () => Console.WriteLine("You selected Option 2.3!")),
-            new Option("Back to Main Menu", () => MenuLib.SelectSubMenu(mainMenu)),
-            new Option("Quit", () => Environment.Exit(0))
-        };
-    }
 
-    static List<Option> SubMenu1_3()
-    {
-        return new List<Option>
+            char keyChar;
+            if(char.TryParse(key.ToString(), out keyChar))
+            {
+                keyChar = '\0';
+            }
+            ConsoleKeyInfo keyInfo = new ConsoleKeyInfo(keyChar, key, shift, alt, ctrl); // Create custom key mapping
+
+            // Save the key binding to the registry after creating the key mapping
+            SaveKeyToRegistry(keyName, keyInfo);
+
+            return keyInfo;
+        }
+
+        public static void Start(List<Option> mainMenu)
         {
-            new Option("Option 1.3.1", () => Console.WriteLine("You selected Option 1.3.1!")),
-            new Option("Option 1.3.2", () => Console.WriteLine("You selected Option 1.3.2!")),
-            new Option("Go Back", () => MenuLib.SelectSubMenu(SubMenu1())),
-            new Option("Back to Main Menu", () => MenuLib.SelectSubMenu(mainMenu)),
-            new Option("Quit", () => Environment.Exit(0))
-        };
+            keyBack = LoadKeyFromRegistry("Back");
+            keyDown = LoadKeyFromRegistry("Down");
+            keyForward = LoadKeyFromRegistry("Forward");
+            keyMainMenu = LoadKeyFromRegistry("MainMenu");
+            keyPress = LoadKeyFromRegistry("Press");
+            keyQuit = LoadKeyFromRegistry("Quit");
+            keyUp = LoadKeyFromRegistry("Up");
+
+
+            activeMenu = mainMenu; // Set the initial menu
+            ConsoleKeyInfo keyRead;
+            do
+            {
+                Write(activeMenu, selectionIndex); // Display the current menu
+                keyRead = Console.ReadKey(true); // Read user input without disaplying it
+                if (keyRead.Key == keyPress.Key)
+                {
+                    Console.Clear();
+                    activeMenu[selectionIndex].Action.Invoke(); // Execute the action associated with the selected option
+                }
+                else if (keyRead.Key == keyUp.Key && selectionIndex - 1 >= 0)
+                {
+                    selectionIndex--; // Move the selection up
+                }
+                else if (keyRead.Key == keyDown.Key && selectionIndex + 1 < activeMenu.Count)
+                {
+                    selectionIndex++; // Move the selection down
+                }
+                else if (keyRead.Key == keyMainMenu.Key)
+                {
+                    selectionIndex = 0; // Reset selection to the top of the main menu
+                    activeMenu = mainMenu; // Go back to the main menu
+                    backHistory.Clear(); // Clear navigation history
+                    forwardHistory.Clear();
+                }
+                else if (keyRead.Key == keyBack.Key)
+                {
+                    GoBack(); // Navigate to the previous menu
+                }
+                else if (keyRead.Key == keyForward.Key)
+                {
+                    GoForwards(); // Navigate to the next menu
+                }
+            }
+            while (keyRead.Key != keyQuit.Key); // Exit the loop when quit key is pressed
+        }
+
+        public static void Write(List<Option> activeMenu, int selectionIndex)
+        {
+            Console.Clear();
+
+            foreach (Option option in activeMenu)
+            {
+                Console.ForegroundColor = option.TextColor; // Set text color
+                Console.BackgroundColor = option.TextHighlightColor; // Set background color
+                try
+                {
+                    if (activeMenu[selectionIndex] == option)
+                    {
+                        Console.WriteLine(">" + option.Text); // Highlight the selected option
+                    }
+                    else
+                    {
+                        Console.WriteLine(" " + option.Text); // Display unselected options
+                    }
+                }
+                catch
+                {
+                    selectionIndex = 0; // Reset selection if out of bounds
+                }
+                Console.ResetColor(); // Reset console colors
+            }
+        }
+
+        public static void SelectSubMenu(List<Option> menu)
+        {
+            backHistory.Push(activeMenu); // Save current menu to back history
+            forwardHistory.Clear(); // Clear forward navigation history
+            selectionIndex = 0; // Reset selection index for the submenu
+            activeMenu = menu; // Set the new menu as active
+        }
+
+        private static void GoBack()
+        {
+            if (backHistory.Count > 0)
+            {
+                forwardHistory.Push(activeMenu); // Save current menu to forward history
+                activeMenu = backHistory.Pop(); // Retrieve the last menu from back history
+                selectionIndex = 0; // Reset selection index
+            }
+        }
+
+        private static void GoForwards()
+        {
+            if (forwardHistory.Count > 0)
+            {
+                backHistory.Push(activeMenu); // Save current menu to back history
+                activeMenu = forwardHistory.Pop(); // Retrieve the next menu from forward history
+                selectionIndex = 0; // Reset selection index
+            }
+        }
     }
 
-    static void ViewControls()
+    public class Option
     {
-        Console.Clear();
-        Console.WriteLine($"Current Controls:\n" +
-                          $"Up: {MenuLib.keyUp.Key}\n" +
-                          $"Down: {MenuLib.keyDown.Key}\n" +
-                          $"Select: {MenuLib.keyPress.Key}\n" +
-                          $"Back: {MenuLib.keyBack.Key}\n" +
-                          $"Forward: {MenuLib.keyForward.Key}\n" +
-                          $"Quit: {MenuLib.keyQuit.Key}\n" +
-                          $"Main Menu: {MenuLib.keyMainMenu.Key}");
-        Console.ReadKey();
+        public string Text { get; set; } // Menu option text
+        public Action Action { get; set; } // Action executed when the option is selected
+        public ConsoleColor TextColor { get; set; } // Text color of the option
+        public ConsoleColor TextHighlightColor { get; set; } // Highlight color for the selected option
+
+        public Option(string text, Action action, ConsoleColor textColor = ConsoleColor.White, ConsoleColor textHighlightColor = ConsoleColor.Black)
+        {
+            Text = text;
+            Action = action;
+            TextColor = textColor;
+            TextHighlightColor = textHighlightColor;
+        }
     }
 }
+
