@@ -1,5 +1,6 @@
 using Microsoft.Win32;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace MenuLibrary
 {
@@ -22,13 +23,25 @@ namespace MenuLibrary
         static ConsoleKeyInfo LoadKeyFromRegistry(string keyName)
         {
             //retrieves value from registry
-            string registryValue = Registry.GetValue(registryKeyPath, keyName, null) as string;
-
-            // If registry value is null or empty, fall back to default
-            if (string.IsNullOrEmpty(registryValue))
+            string registryValue; // Initialize the registry value to null
+            // Check if the current platform is Windows
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
+                // If on Windows, try to access the registry
+                registryValue = Registry.GetValue(registryKeyPath, keyName, null) as string;
+
+                // If registry value is null or empty, fall back to default
+                if (string.IsNullOrEmpty(registryValue))
+                {
+                    registryValue = defaultKeyBindings[keyName]; // Default value
+                }
+            }
+            else
+            {
+                // For non-Windows platforms, directly use the default keybindings
                 registryValue = defaultKeyBindings[keyName]; // Default value
             }
+
 
             // Split the string into parts (key and modifiers)
             int[] regVal = registryValue.Split("|").Select(int.Parse).ToArray();
@@ -54,8 +67,12 @@ namespace MenuLibrary
         #endregion
         static void SaveKeyToRegistry(string keyName, ConsoleKeyInfo keyBind)
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                Registry.SetValue(registryKeyPath, keyName, $"{(int)keyBind.Key}|{(int)keyBind.Modifiers}");
+            }
             //saves value to registry
-            Registry.SetValue(registryKeyPath, keyName, $"{(int)keyBind.Key}|{(int)keyBind.Modifiers}");
+            
         }
 
         static ConsoleKey ConvertNumberToConsoleKey(int number)
@@ -125,7 +142,7 @@ namespace MenuLibrary
             ConsoleKeyInfo keyRead;
             do
             {
-                Write(activeMenu, selectionIndex); // Display the current menu
+                Write(); // Display the current menu
                 keyRead = Console.ReadKey(true); // Read user input without disaplying it
                 if (keyRead.Key == keyPress.Key)
                 {
@@ -159,7 +176,7 @@ namespace MenuLibrary
             while (keyRead.Key != keyQuit.Key); // Exit the loop when quit key is pressed
         }
 
-        public static void Write(List<Option> activeMenu, int selectionIndex)
+        public static void Write()
         {
             Console.Clear();
 
