@@ -1,129 +1,75 @@
-using System.Runtime.InteropServices;
+using MenuLibrary;
+using System.Runtime.ConstrainedExecution;
 
-namespace MenuLibrary
+class Program
 {
-    public static class MenuLib
+    // Global main menu definition
+    static List<Option> mainMenu = new List<Option>
     {
-        #region 
-        static public List<Option> activeMenu = new List<Option>();
-        static public int selectionIndex = 0;
-        static public int currentHistoryIndex = 0;
-        static public List<KeyValuePair<int, List<Option>>> menuHistory = new List<KeyValuePair<int, List<Option>>>();
-        #endregion
+        new Option("Go to Submenu 1", () => MenuLib.SelectSubMenu(SubMenu1())),
+        new Option("Go to Submenu 2", () => MenuLib.SelectSubMenu(SubMenu2())),
+        new Option("View Controls", ViewControls),     // Option to view current key bindings
+        new Option("Quit", () => Environment.Exit(0))  // Option to quit
+    };
 
-        #region Keys
-        static public ConsoleKeyInfo keyPress = KeyChange(ConsoleKey.Enter);
-        static public ConsoleKeyInfo keyBack = KeyChange(ConsoleKey.LeftArrow);
-        static public ConsoleKeyInfo keyForward = KeyChange(ConsoleKey.RightArrow);
-        static public ConsoleKeyInfo keyQuit = KeyChange(ConsoleKey.Escape);
-        static public ConsoleKeyInfo keyMainMenu = KeyChange(ConsoleKey.Spacebar);
-        static public ConsoleKeyInfo keyUp = KeyChange(ConsoleKey.UpArrow);
-        static public ConsoleKeyInfo keyDown = KeyChange(ConsoleKey.DownArrow);
-        #endregion
-
-        public static ConsoleKeyInfo KeyChange(ConsoleKey key, bool shift = false, bool alt = false, bool ctrl = false)
+    static void Main()
+    {
+        //MenuLib.Start(mainMenu); // Start the menu system with the global main menu
+        while (true)
         {
-            return new ConsoleKeyInfo('\0', key, shift, alt, ctrl);
-        }
-
-        public static void Start(List<Option> mainMenu)
-        {
-            activeMenu = mainMenu;
-            ConsoleKeyInfo keyRead;
-            do
-            {
-                Write(activeMenu, selectionIndex);
-                keyRead = Console.ReadKey();
-                if (keyRead.Key == keyPress.Key)
-                {
-                    Console.Clear();
-                    activeMenu[selectionIndex].Action.Invoke();
-                }
-                else if (keyRead.Key == keyUp.Key && selectionIndex - 1 >= 0)
-                {
-                    selectionIndex--;
-                }
-                else if (keyRead.Key == keyDown.Key && selectionIndex + 1 < activeMenu.Count)
-                {
-                    selectionIndex++;
-                }
-                else if (keyRead.Key == keyMainMenu.Key)
-                {
-                    selectionIndex = 0;
-                    activeMenu = mainMenu;
-                }
-                else if (keyRead.Key == keyBack.Key)
-                {
-                    GoBack();
-                }
-                else if (keyRead.Key == keyForward.Key)
-                {
-                    GoForwards();
-                }
-            }
-            while (keyRead.Key != keyQuit.Key);
-        }
-
-        public static void Write(List<Option> activeMenu, int selectionIndex)
-        {
-            Console.Clear();
-
-            foreach (Option menu in activeMenu)
-            {
-                if (activeMenu[selectionIndex] == menu)
-                {
-                    Console.WriteLine(">" + menu.Name);
-                }
-                else
-                {
-                    Console.WriteLine(" " + menu.Name);
-                }
-            }
+            MenuLib.Start(mainMenu);
 
         }
 
-        public static void SelectSubMenu(List<Option> menu)
-        {
-            if (menuHistory.Count > 10)
-            {
-                menuHistory.RemoveAt(10);
-            }
-            menuHistory.Insert(0, new KeyValuePair<int, List<Option>>(selectionIndex, new List<Option>(activeMenu)));
-            //currentHistoryIndex = menuHistory.Count;
-            selectionIndex = 0;
-            activeMenu = menu;
-        }
-
-        public static void GoForwards()
-        {
-            if (currentHistoryIndex > 0)
-            {
-                currentHistoryIndex--;
-                selectionIndex = menuHistory[currentHistoryIndex].Key;
-                activeMenu = menuHistory[currentHistoryIndex].Value;
-            }
-        }
-
-        public static void GoBack()
-        {
-            if (currentHistoryIndex < menuHistory.Count - 1)
-            {
-                currentHistoryIndex++;
-                selectionIndex = menuHistory[currentHistoryIndex].Key;
-                activeMenu = menuHistory[currentHistoryIndex].Value;
-            }
-        }
     }
 
-    public class Option
+    static List<Option> SubMenu1()
     {
-        public string Name { get; }
-        public Action Action { get; }
-
-        public Option(string name, Action action)
+        return new List<Option>
         {
-            Name = name;
-            Action = action;
-        }
+            new Option("Option 1.1", () => Console.WriteLine("You selected Option 1.1!")),
+            new Option("Option 1.2", () => Console.WriteLine("You selected Option 1.2!")),
+            new Option("Back to Main Menu", () => MenuLib.SelectSubMenu(mainMenu)),
+            new Option("Go to Submenu 1.3", () => MenuLib.SelectSubMenu(SubMenu1_3())),
+            new Option("Quit", () => Environment.Exit(0))
+        };
+    }
+
+    static List<Option> SubMenu2()
+    {
+        return new List<Option>
+        {
+            new Option("Option 2.1", () => Console.WriteLine("You selected Option 2.1!")),
+            new Option("Option 2.2", () => Console.WriteLine("You selected Option 2.2!")),
+            new Option("Option 2.3", () => Console.WriteLine("You selected Option 2.3!")),
+            new Option("Back to Main Menu", () => MenuLib.SelectSubMenu(mainMenu)),
+            new Option("Quit", () => Environment.Exit(0))
+        };
+    }
+
+    static List<Option> SubMenu1_3()
+    {
+        return new List<Option>
+        {
+            new Option("Option 1.3.1", () => Console.WriteLine("You selected Option 1.3.1!")),
+            new Option("Option 1.3.2", () => Console.WriteLine("You selected Option 1.3.2!")),
+            new Option("Go Back", () => MenuLib.SelectSubMenu(SubMenu1())),
+            new Option("Back to Main Menu", () => MenuLib.SelectSubMenu(mainMenu)),
+            new Option("Quit", () => Environment.Exit(0))
+        };
+    }
+
+    static void ViewControls()
+    {
+        Console.Clear();
+        Console.WriteLine($"Current Controls:\n" +
+                          $"Up: {MenuLib.keyUp.Key}\n" +
+                          $"Down: {MenuLib.keyDown.Key}\n" +
+                          $"Select: {MenuLib.keyPress.Key}\n" +
+                          $"Back: {MenuLib.keyBack.Key}\n" +
+                          $"Forward: {MenuLib.keyForward.Key}\n" +
+                          $"Quit: {MenuLib.keyQuit.Key}\n" +
+                          $"Main Menu: {MenuLib.keyMainMenu.Key}");
+        Console.ReadKey();
     }
 }
