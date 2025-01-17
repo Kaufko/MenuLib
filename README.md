@@ -71,9 +71,9 @@ To change the controls simply call the ChangeKey() function which returns the ne
 KeyChange has 2 overloads, both returning ConsoleKeyInfo
 
 ```C#
-KeyChange(string keyName, ConsoleKeyInfo keyInfo);
+ConsoleKeyInfo KeyChange(string keyName, ConsoleKeyInfo keyInfo);
 
-KeyChange(string keyName, ConsoleKey key = ConsoleKey.None, bool shift = false, bool alt = false, bool ctrl = false);
+ConsoleKeyInfo KeyChange(string keyName, ConsoleKey key = ConsoleKey.None, bool shift = false, bool alt = false, bool ctrl = false);
 ```
 
 <h4> Here is a list of all configurable keys and what they do </h4>
