@@ -15,9 +15,9 @@ MenuLib is a dotnet library that is used to create an interactive menu in consol
 First you need to make a main menu, which you will later pass as args into the Start() function.
 Each menu is made from Options which have 3 overloads
 ```C#
-Option(string text, Action action, ConsoleColor? textColor = null, ConsoleColor? textHighlightColor = null)
-Option(string text, Action action, ConsoleColor? textHighlightColor = null)
-Option(string text, Action action)
+new Option(string text, Action action, ConsoleColor? textColor = null, ConsoleColor? textHighlightColor = null);
+new Option(string text, Action action, ConsoleColor? textHighlightColor = null);
+new Option(string text, Action action);
 ```
 
 ```C#
@@ -64,16 +64,16 @@ namespace Main
 Changing menus is very easy. When creating an option use the function SelectSubMenu()
 
 ```C#
-new Option("Menu change", () => SelectMenu(subMenu))
+new Option("Menu change", () => SelectMenu(subMenu));
 ```
 
 To change the controls simply call the ChangeKey() function which returns the new key that you can assign to one of the controls.
 KeyChange has 2 overloads, both returning ConsoleKeyInfo
 
 ```C#
-KeyChange(string keyName, ConsoleKeyInfo keyInfo)
+KeyChange(string keyName, ConsoleKeyInfo keyInfo);
 
-KeyChange(string keyName, ConsoleKey key = ConsoleKey.None, bool shift = false, bool alt = false, bool ctrl = false)
+KeyChange(string keyName, ConsoleKey key = ConsoleKey.None, bool shift = false, bool alt = false, bool ctrl = false);
 ```
 
 <h4> Here is a list of all configurable keys and what they do </h4>
