@@ -101,9 +101,6 @@ namespace MenuLibrary
         static internal ConsoleColor defaultBackgroundColor;
         static public List<Option> activeMenu = new List<Option>();
 
-        static private Stack<List<Option>> backHistory = new Stack<List<Option>>(); // Stack to track previous menus for back navigation
-        static private Stack<List<Option>> forwardHistory = new Stack<List<Option>>(); // Stack to track menus for forward navigation
-
       static private LinkedList<List<Option>> navigationHistory = new();
         #endregion
 
