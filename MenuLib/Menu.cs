@@ -51,7 +51,7 @@ namespace MenuLibrary
             {
                 registryValue = Registry.GetValue(registryKeyPath, keyName, null) as string;
 
-                if (string.IsNullOrEmpty(registryValue))
+                if (string.IsNullOrEmpty(registryValue)) //checks if keybinds have been changed
                 {
                     registryValue = defaultKeyBindings[keyName];
                 }
@@ -103,6 +103,8 @@ namespace MenuLibrary
 
         static private Stack<List<Option>> backHistory = new Stack<List<Option>>(); // Stack to track previous menus for back navigation
         static private Stack<List<Option>> forwardHistory = new Stack<List<Option>>(); // Stack to track menus for forward navigation
+
+      static private LinkedList<List<Option>> navigationHistory = new();
         #endregion
 
 
@@ -156,8 +158,6 @@ namespace MenuLibrary
                 {
                     selectionIndex = 0; // Reset selection to the top of the main menu
                     activeMenu = mainMenu; // Go back to the main menu
-                    backHistory.Clear(); // Clear navigation history
-                    forwardHistory.Clear();
                 }
                 else if (keyRead.Key == keyBack.Key && keyRead.Modifiers == keyBack.Modifiers)
                 {
@@ -205,33 +205,36 @@ namespace MenuLibrary
             }
         }
 
-        public static void SelectMenu(List<Option> menu)
-        {
-            backHistory.Push(activeMenu); // Save current menu to back history
-            forwardHistory.Clear(); // Clear forward navigation history
-            selectionIndex = 0; // Reset selection index for the submenu
-            activeMenu = menu; // Set the new menu as active
-        }
+        if (currentNode != null)
+{
+    while (currentNode.Next != null)
+    {
+        navigationHistory.Remove(currentNode.Next);
+    }
+}
+
 
         private static void GoBack()
-        {
-            if (backHistory.Count > 0)
-            {
-                forwardHistory.Push(activeMenu); // Save current menu to forward history
-                activeMenu = backHistory.Pop(); // Retrieve the last menu from back history
-                selectionIndex = 0; // Reset selection index
-            }
-        }
+{
+    if (currentNode != null && currentNode.Previous != null)
+    {
+        // Move to the previous menu in the history
+        currentNode = currentNode.Previous;
+        activeMenu = currentNode.Value;  // Assign the menu from the previous node to activeMenu
+        selectionIndex = 0;  // Optionally reset the selection index
+    }
+}
 
-        private static void GoForwards()
-        {
-            if (forwardHistory.Count > 0)
-            {
-                backHistory.Push(activeMenu); // Save current menu to back history
-                activeMenu = forwardHistory.Pop(); // Retrieve the next menu from forward history
-                selectionIndex = 0; // Reset selection index
-            }
-        }
+private static void GoForwards()
+{
+    if (currentNode != null && currentNode.Next != null)
+    {
+        // Move to the next menu in the history
+        currentNode = currentNode.Next;
+        activeMenu = currentNode.Value;  // Assign the menu from the next node to activeMenu
+        selectionIndex = 0;  // Optionally reset the selection index
+    }
+}
 
         private static void LoadKeybinds(bool resetKeybinds = false)
         {
@@ -246,10 +249,10 @@ namespace MenuLibrary
     }// End of MenuLib class
     public class Option
     {
-        public string Text { get; set; } // Option name
-        public Action Action { get; set; } // Action executed when the option is selected
-        public ConsoleColor? TextColor { get; set; } // Text color of the option
-        public ConsoleColor? TextHighlightColor { get; set; } // Highlight color for the selected option
+        public string Text { get; set; }
+        public Action Action { get; set; } // Is executed on option selection
+        public ConsoleColor? TextColor { get; set; }
+        public ConsoleColor? TextHighlightColor { get; set; }
 
 
         public Option(string text, Action action, ConsoleColor? textColor = null, ConsoleColor? textHighlightColor = null)
@@ -277,4 +280,3 @@ namespace MenuLibrary
         }
     }
 }
-
