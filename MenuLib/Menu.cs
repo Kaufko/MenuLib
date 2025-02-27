@@ -6,7 +6,7 @@ namespace MenuLibrary
     public static class MenuLib
     {
         #region KeyBinds
-        static public ConsoleKeyInfo keyPress; // Key to interact with option   
+        static public ConsoleKeyInfo keyPress; // Key to interact with option  
         static public ConsoleKeyInfo keyBack; // Key to move backward to the previous menu
         static public ConsoleKeyInfo keyForward; // Key to move forward to the next menu    
         static public ConsoleKeyInfo keyQuit; // Key to quit the menu
@@ -100,8 +100,9 @@ namespace MenuLibrary
         static internal ConsoleColor defaultForegroundColor;
         static internal ConsoleColor defaultBackgroundColor;
         static public List<Option> activeMenu = new List<Option>();
+        static private LinkedList<List<Option>> navigationHistory = new();
 
-      static private LinkedList<List<Option>> navigationHistory = new();
+        static private LinkedListNode<List<Option>> currentNode;
         #endregion
 
 
@@ -202,36 +203,44 @@ namespace MenuLibrary
             }
         }
 
-        if (currentNode != null)
-{
-    while (currentNode.Next != null)
-    {
-        navigationHistory.Remove(currentNode.Next);
-    }
-}
+       
 
 
         private static void GoBack()
-{
-    if (currentNode != null && currentNode.Previous != null)
-    {
-        // Move to the previous menu in the history
-        currentNode = currentNode.Previous;
-        activeMenu = currentNode.Value;  // Assign the menu from the previous node to activeMenu
-        selectionIndex = 0;  // Optionally reset the selection index
-    }
-}
+        {
+            if (currentNode != null && currentNode.Previous != null)
+            {
+                // Move to the previous menu in the history
+                currentNode = currentNode.Previous;
+                activeMenu = currentNode.Value;  // Assign the menu from the previous node to activeMenu
+                selectionIndex = 0;  // Optionally reset the selection index
+            }
+        }
 
-private static void GoForwards()
-{
-    if (currentNode != null && currentNode.Next != null)
-    {
-        // Move to the next menu in the history
-        currentNode = currentNode.Next;
-        activeMenu = currentNode.Value;  // Assign the menu from the next node to activeMenu
-        selectionIndex = 0;  // Optionally reset the selection index
-    }
-}
+        public static void SelectMenu(List<Option> menu)
+        {
+            navigationHistory.AddFirst(activeMenu); // Save current menu to back history
+            if (currentNode != null)
+            {
+                while (currentNode.Next != null)
+                {
+                    navigationHistory.Remove(currentNode.Next);
+                }
+            }
+            selectionIndex = 0; // Reset selection index for the submenu
+            activeMenu = menu; // Set the new menu as active
+        }
+
+        private static void GoForwards()
+        {
+            if (currentNode != null && currentNode.Next != null)
+            {
+                // Move to the next menu in the history
+                currentNode = currentNode.Next;
+                activeMenu = currentNode.Value;  // Assign the menu from the next node to activeMenu
+                selectionIndex = 0;  // Optionally reset the selection index
+            }
+        }
 
         private static void LoadKeybinds(bool resetKeybinds = false)
         {
