@@ -25,7 +25,7 @@ namespace MenuLibrary
             { "Down", "40|0" },          // DownArrow
         };
 
-        static ConsoleKey ConvertNumberToConsoleKey(int number)
+        private static ConsoleKey ConvertNumberToConsoleKey(int number)
         {
             if (Enum.IsDefined(typeof(ConsoleKey), number)) // Check if the number matches a special key (e.g., Enter, Escape)
             {
@@ -37,6 +37,36 @@ namespace MenuLibrary
             }
         }
 
+        public static ConsoleKeyInfo KeyChange(string keyName, ConsoleKey key = ConsoleKey.None, bool shift = false, bool alt = false, bool ctrl = false)
+        {
+            char keyChar;
+            if (char.TryParse(key.ToString(), out keyChar))
+            {
+                keyChar = '\0';
+            }
+            ConsoleKeyInfo keyInfo = new ConsoleKeyInfo(keyChar, key, shift, alt, ctrl); // Create custom key mapping
+
+            SaveKeyToRegistry(keyName, keyInfo); // Save the key binding to the registry after creating the key mapping
+
+            return keyInfo;
+        }
+
+        public static ConsoleKeyInfo KeyChange(string keyName, ConsoleKeyInfo keyInfo)
+        {
+            SaveKeyToRegistry(keyName, keyInfo);
+            return keyInfo;
+        }
+
+        private static void LoadKeybinds(bool resetKeybinds = false)
+        {
+            keyBack = LoadKeyFromRegistry("Back");
+            keyDown = LoadKeyFromRegistry("Down");
+            keyForward = LoadKeyFromRegistry("Forward");
+            keyMainMenu = LoadKeyFromRegistry("MainMenu");
+            keyPress = LoadKeyFromRegistry("Press");
+            keyQuit = LoadKeyFromRegistry("Quit");
+            keyUp = LoadKeyFromRegistry("Up");
+        }
         #endregion
 
         #region Registry
@@ -53,7 +83,7 @@ namespace MenuLibrary
 
                 if (string.IsNullOrEmpty(registryValue)) //checks if keybinds have been changed
                 {
-                    registryValue = defaultKeyBindings[keyName];
+                    registryValue = defaultKeyBindings[keyName]; //resets to default keybinds
                 }
             }
             else
@@ -86,7 +116,7 @@ namespace MenuLibrary
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                Registry.SetValue(registryKeyPath, keyName, $"{(int)keyBind.Key}|{(int)keyBind.Modifiers}");
+                Registry.SetValue(registryKeyPath, keyName, $"{(int)keyBind.Key}|{(int)keyBind.Modifiers}"); //writes keybind to registry
             }
         }
 
@@ -94,38 +124,56 @@ namespace MenuLibrary
 
         #region  Variables
 
-
         static public int selectionIndex = 0;
 
         static internal ConsoleColor defaultForegroundColor;
         static internal ConsoleColor defaultBackgroundColor;
-        static public List<Option> activeMenu = new List<Option>();
-        static private LinkedList<List<Option>> navigationHistory = new();
 
+        static public List<Option> activeMenu;
+
+        static private LinkedList<List<Option>> navigationHistory = new();
         static private LinkedListNode<List<Option>> currentNode;
         #endregion
 
+        #region Navigation
 
-        public static ConsoleKeyInfo KeyChange(string keyName, ConsoleKey key = ConsoleKey.None, bool shift = false, bool alt = false, bool ctrl = false)
+        private static void GoBack()
         {
-            char keyChar;
-            if (char.TryParse(key.ToString(), out keyChar))
+            if (currentNode != null && currentNode.Previous != null)
             {
-                keyChar = '\0';
+                currentNode = currentNode.Previous; // Move to the previous menu in the history
+                activeMenu = currentNode.Value;  // Assign the menu from the previous node to activeMenu
+                selectionIndex = 0;  // Reset the selection index
             }
-            ConsoleKeyInfo keyInfo = new ConsoleKeyInfo(keyChar, key, shift, alt, ctrl); // Create custom key mapping
-
-            SaveKeyToRegistry(keyName, keyInfo); // Save the key binding to the registry after creating the key mapping
-
-            return keyInfo;
         }
 
-        public static ConsoleKeyInfo KeyChange(string keyName, ConsoleKeyInfo keyInfo)
+        private static void GoForwards()
         {
-            SaveKeyToRegistry(keyName, keyInfo);
-            return keyInfo;
+            if (currentNode != null && currentNode.Next != null)
+            {
+                currentNode = currentNode.Next; // Move to the next menu in the history
+                activeMenu = currentNode.Value;
+                selectionIndex = 0;
+            }
         }
 
+        public static void SelectMenu(List<Option> menu)
+        {
+            if (currentNode != null)
+            {
+                while (currentNode.Next != null) //clears out menus that are after the currentnode
+                {
+                    navigationHistory.Remove(currentNode.Next);
+                }
+            }
+            navigationHistory.AddAfter(currentNode, menu); // Save current menu to navigation history after the current node
+            currentNode = currentNode.Next;
+            selectionIndex = 0;
+            activeMenu = menu;
+        }
+        #endregion
+
+        #region Main
         public static void Start(List<Option> mainMenu)
         {
             defaultForegroundColor = Console.ForegroundColor;
@@ -200,62 +248,13 @@ namespace MenuLibrary
                 {
                     selectionIndex = 0; // Reset selection if out of bounds
                 }
-                Console.ResetColor(); // Reset console colors
+                Console.ResetColor(); // Reset console colors to defaults
             }
         }
+        #endregion
 
-
-
-
-        private static void GoBack()
-        {
-            if (currentNode != null && currentNode.Previous != null)
-            {
-                // Move to the previous menu in the history
-                currentNode = currentNode.Previous;
-                activeMenu = currentNode.Value;  // Assign the menu from the previous node to activeMenu
-                selectionIndex = 0;  // Optionally reset the selection index
-            }
-        }
-
-        public static void SelectMenu(List<Option> menu)
-        {
-            
-            if (currentNode != null)
-            {
-                while (currentNode.Next != null) //clears out menus that are after the currentnode
-                {
-                    navigationHistory.Remove(currentNode.Next);
-                }
-            }
-            navigationHistory.AddAfter(currentNode, menu); // Save current menu to back history
-            currentNode = currentNode.Next;
-            selectionIndex = 0; // Reset selection index for the submenu
-            activeMenu = menu; // Set the new menu as active
-        }
-
-        private static void GoForwards()
-        {
-            if (currentNode != null && currentNode.Next != null)
-            {
-                // Move to the next menu in the history
-                currentNode = currentNode.Next;
-                activeMenu = currentNode.Value;  // Assign the menu from the next node to activeMenu
-                selectionIndex = 0;  // Optionally reset the selection index
-            }
-        }
-
-        private static void LoadKeybinds(bool resetKeybinds = false)
-        {
-            keyBack = LoadKeyFromRegistry("Back");
-            keyDown = LoadKeyFromRegistry("Down");
-            keyForward = LoadKeyFromRegistry("Forward");
-            keyMainMenu = LoadKeyFromRegistry("MainMenu");
-            keyPress = LoadKeyFromRegistry("Press");
-            keyQuit = LoadKeyFromRegistry("Quit");
-            keyUp = LoadKeyFromRegistry("Up");
-        }
     }// End of MenuLib class
+
     public class Option
     {
         public string Text { get; set; }
