@@ -134,11 +134,13 @@ namespace MenuLibrary
             LoadKeybinds();
 
             activeMenu = mainMenu; // Set the initial menu
+            var firstNode = navigationHistory.AddFirst(mainMenu);
+            currentNode = firstNode;
             ConsoleKeyInfo keyRead;
             do
             {
                 Write(); // Display the current menu
-                keyRead = Console.ReadKey(true); // Read user input without disaplying it
+                keyRead = Console.ReadKey(true); // Read user input without displaying it
                 if (keyRead.Key == keyPress.Key && keyRead.Modifiers == keyPress.Modifiers)
                 {
                     Console.Clear();
@@ -154,8 +156,7 @@ namespace MenuLibrary
                 }
                 else if (keyRead.Key == keyMainMenu.Key && keyRead.Modifiers == keyMainMenu.Modifiers)
                 {
-                    selectionIndex = 0; // Reset selection to the top of the main menu
-                    activeMenu = mainMenu; // Go back to the main menu
+                    SelectMenu(mainMenu); // Go back to the main menu
                 }
                 else if (keyRead.Key == keyBack.Key && keyRead.Modifiers == keyBack.Modifiers)
                 {
@@ -203,7 +204,7 @@ namespace MenuLibrary
             }
         }
 
-       
+
 
 
         private static void GoBack()
@@ -219,14 +220,16 @@ namespace MenuLibrary
 
         public static void SelectMenu(List<Option> menu)
         {
-            navigationHistory.AddFirst(activeMenu); // Save current menu to back history
+            
             if (currentNode != null)
             {
-                while (currentNode.Next != null)
+                while (currentNode.Next != null) //clears out menus that are after the currentnode
                 {
                     navigationHistory.Remove(currentNode.Next);
                 }
             }
+            navigationHistory.AddAfter(currentNode, menu); // Save current menu to back history
+            currentNode = currentNode.Next;
             selectionIndex = 0; // Reset selection index for the submenu
             activeMenu = menu; // Set the new menu as active
         }
